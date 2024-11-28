@@ -1,5 +1,10 @@
 // todos/todo.service.ts
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StatusEnum, TodoEntity } from './todo.entity';
@@ -14,25 +19,36 @@ export class TodoService {
     @Inject('UUID') private readonly generateUUID: () => string,
   ) {}
 
-  async addTodo(createTodoDto: CreateTodoDto): Promise<TodoEntity> {
+  async addTodo(
+    createTodoDto: CreateTodoDto,
+    userId: string,
+  ): Promise<TodoEntity> {
     const id = this.generateUUID();
     console.log(`Generated UUID: ${id}`);
     const todo = this.todoRepository.create({
       ...createTodoDto,
       id,
+      userId,
     });
     return this.todoRepository.save(todo);
   }
+
   async updateTodo(
     id: string,
     updateTodoDto: UpdateTodoDto,
+    userId: string,
   ): Promise<TodoEntity> {
-    await this.todoRepository.update(id, updateTodoDto);
-    const updatedTodo = await this.todoRepository.findOne({ where: { id } });
-    if (!updatedTodo) {
+    const todo = await this.todoRepository.findOne({ where: { id } });
+    if (!todo) {
       throw new NotFoundException(`Todo with ID ${id} not found`);
     }
-    return updatedTodo;
+    if (todo.userId !== userId) {
+      throw new UnauthorizedException(
+        'You are not authorized to update this todo',
+      );
+    }
+    await this.todoRepository.update(id, updateTodoDto);
+    return this.todoRepository.findOne({ where: { id } });
   }
 
   findAll(): Promise<TodoEntity[]> {
@@ -47,11 +63,17 @@ export class TodoService {
     return todo;
   }
 
-  async deleteTodo(id: string): Promise<void> {
-    const result = await this.todoRepository.softDelete(id);
-    if (result.affected === 0) {
+  async deleteTodo(id: string, userId: string): Promise<void> {
+    const todo = await this.todoRepository.findOne({ where: { id } });
+    if (!todo) {
       throw new NotFoundException(`Todo with ID ${id} not found`);
     }
+    if (todo.userId !== userId) {
+      throw new UnauthorizedException(
+        'You are not authorized to delete this todo',
+      );
+    }
+    await this.todoRepository.softDelete(id);
   }
 
   async restoreTodo(id: string): Promise<void> {

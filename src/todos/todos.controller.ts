@@ -7,6 +7,7 @@ import {
   Patch,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import { TodoService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo-dto';
@@ -35,21 +36,28 @@ export class TodoController {
   }
 
   @Post()
-  async addTodo(@Body() createTodoDto: CreateTodoDto) {
-    return this.todoService.addTodo(createTodoDto);
+  async addTodo(
+    @Body() createTodoDto: CreateTodoDto,
+    @Req() req: any,
+  ): Promise<TodoEntity> {
+    const userId = req.user.userId;
+    return this.todoService.addTodo(createTodoDto, userId);
   }
 
   @Patch(':id')
   async updateTodo(
     @Param('id') id: string,
     @Body() updateTodoDto: UpdateTodoDto,
-  ) {
-    return this.todoService.updateTodo(id, updateTodoDto);
+    @Req() req: any,
+  ): Promise<TodoEntity> {
+    const userId = req.user.userId;
+    return this.todoService.updateTodo(id, updateTodoDto, userId);
   }
 
   @Delete(':id')
-  async deleteTodo(@Param('id') id: string) {
-    return this.todoService.deleteTodo(id);
+  async deleteTodo(@Param('id') id: string, @Req() req: any): Promise<void> {
+    const userId = req.user.userId;
+    return this.todoService.deleteTodo(id, userId);
   }
 
   @Post(':id/restore')

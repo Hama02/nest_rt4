@@ -1,5 +1,11 @@
 // todos/dto/create-todo.dto.ts
-import { IsString, MinLength, MaxLength, IsEnum } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  IsEnum,
+  IsNotEmpty,
+} from 'class-validator';
 import { StatusEnum } from '../todo.entity';
 
 export class CreateTodoDto {
@@ -14,4 +20,8 @@ export class CreateTodoDto {
 
   @IsEnum(StatusEnum, { message: 'Status must be a valid enum value' })
   status?: StatusEnum;
+
+  @IsNotEmpty()
+  @IsString()
+  userId: string;
 }

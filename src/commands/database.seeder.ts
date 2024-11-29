@@ -12,7 +12,6 @@ async function bootstrap() {
   const cvService = app.get(CvService);
   const skillService = app.get(SkillService);
 
-  // Générer des utilisateurs fictifs
   const users = [];
   for (let i = 0; i < 10; i++) {
     const user = {
